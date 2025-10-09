@@ -1,24 +1,31 @@
 -- db/migrations/001_init.sql
-CREATE TABLE IF NOT EXISTS profiles (
-  profile_id TEXT PRIMARY KEY, -- todo this should be uuid
+CREATE TABLE profiles (
+  profile_id UUID PRIMARY KEY,
   phone TEXT UNIQUE NOT NULL,
-  first_name TEXT,
-  last_name TEXT,
-  linkedin_url TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Interviews table
-CREATE TABLE IF NOT EXISTS interviews (
-  interview_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  profile_id TEXT NOT NULL,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE profile_data (
+  profile_id UUID PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  city TEXT NOT NULL,
+  state CHAR(2) NOT NULL,
+  linkedin_url TEXT, 
+  FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
+)
+
+CREATE TABLE otp_codes (
+  phone TEXT PRIMARY KEY,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE interviews (
+  interview_id SERIAL PRIMARY KEY,
+  profile_id UUID NOT NULL,
   interview_text TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
 );
-
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_profiles_phone ON profiles(phone);
-CREATE INDEX IF NOT EXISTS idx_interviews_profile_id ON interviews(profile_id);
