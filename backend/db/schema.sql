@@ -1,3 +1,5 @@
+BEGIN;
+
 -- db/migrations/001_init.sql
 CREATE TABLE profiles (
   profile_id UUID PRIMARY KEY,
@@ -14,7 +16,7 @@ CREATE TABLE profile_data (
   state CHAR(2) NOT NULL,
   linkedin_url TEXT, 
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE otp_codes (
   phone TEXT PRIMARY KEY,
@@ -29,3 +31,5 @@ CREATE TABLE interviews (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
 );
+
+COMMIT;
