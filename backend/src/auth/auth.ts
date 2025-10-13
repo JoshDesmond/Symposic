@@ -4,6 +4,7 @@ import { db, getAllUsers } from '../database';
 const router = Router();
 
 router.get('/users', async (req, res) => {
+  console.info(`API Route called, getting users`)
   try {
     const result = await getAllUsers();
     res.json(result);

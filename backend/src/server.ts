@@ -8,11 +8,19 @@ import { closeDatabase } from './database';
 
 dotenv.config();
 
+console.log(`Creating server`);
+
 const app = express();
 const PORT = process.env.PORT || 8347;
 
 app.use(cors());
 app.use(express.json());
+
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // Initialize Claude
 if (false) {
@@ -27,8 +35,21 @@ if (false) {
 // Mount routes
 app.use('/api', usersRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  console.log('Health check called');
+  res.json({ status: 'ok' });
+});
+
+// Error handling middleware
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Accessible at http://localhost:${PORT} from WSL2`);
 });
   
 process.on('SIGINT', async () => {
