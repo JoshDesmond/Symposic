@@ -11,7 +11,7 @@ dotenv.config();
 console.log(`Creating server`);
 
 const app = express();
-const PORT = process.env.PORT || 8347;
+const PORT = parseInt(process.env.PORT ?? '8347');
 
 app.use(cors());
 app.use(express.json());

@@ -32,4 +32,11 @@ CREATE TABLE interviews (
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
 );
 
+CREATE TABLE sessions (
+  session_token TEXT PRIMARY KEY,
+  phone TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 COMMIT;
