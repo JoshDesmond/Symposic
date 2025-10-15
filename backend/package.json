@@ -7,8 +7,12 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "test:db": "tsx src/scripts/test-db.ts"
+    "test": "jest --verbose=false",
+    "test:coverage": "jest --coverage",
+    "test:db": "tsx src/scripts/test-db.ts",
+    "test:auth": "tsx src/scripts/test-auth.ts",
+    "db:setup": "./src/scripts/setup-db.sh",
+    "db:reset": "./src/scripts/setup-db.sh --recreate"
   },
   "keywords": [],
   "author": "Desmond",
@@ -23,9 +27,12 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.15.5",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.10",
+    "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",
     "typescript": "^5.3.3"
   }

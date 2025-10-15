@@ -19,7 +19,7 @@ CREATE TABLE profile_data (
 
 CREATE TABLE otp_codes (
   phone TEXT PRIMARY KEY,
-  code TEXT NOT NULL,
+  code INTEGER NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL
 );
 

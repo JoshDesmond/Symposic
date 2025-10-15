@@ -4,9 +4,12 @@ import pgPromise from 'pg-promise';
 
 dotenv.config();
 
-console.log(`Password: ${process.env.DB_PASSWORD}`);
+if (!process.env.DB_USER || !process.env.DB_PASSWORD) {
+  console.error('DB_USER or DB_PASSWORD is not set. Check that .env file is configured');
+  process.exit(1);
+}
 
-const username = process.env.DB_USER || 'baryon';
+const username = process.env.DB_USER;
 const password = process.env.DB_PASSWORD;
 const host = process.env.DB_HOST || 'localhost';
 const database = process.env.DB_NAME || 'symposic';

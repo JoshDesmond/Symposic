@@ -3,6 +3,19 @@
 # PostgreSQL Setup Script for Symposic MVP
 set -e
 
+# Parse command line arguments
+RECREATE=false
+for arg in "$@"; do
+    case $arg in
+        --recreate)
+            RECREATE=true
+            shift
+            ;;
+        *)
+            ;;
+    esac
+done
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Navigate to project root (two levels up from scripts directory)
@@ -17,7 +30,7 @@ fi
 
 # Check if PostgreSQL is installed
 if ! command -v psql &> /dev/null; then
-    echo "❌ PostgreSQL not found. Installing..."
+    echo "PostgreSQL not found. Installing..."
     
     # Detect OS and install PostgreSQL
     if [ -f /etc/os-release ] && grep -q -E "Ubuntu|Debian" /etc/os-release; then
@@ -25,7 +38,7 @@ if ! command -v psql &> /dev/null; then
         sudo apt update
         sudo apt install -y postgresql postgresql-contrib
     else
-        echo "❌ Unsupported OS. Please install PostgreSQL manually."
+        echo "Unsupported OS. Please install PostgreSQL manually."
         exit 1
     fi
 fi
@@ -38,6 +51,11 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 fi
 
 # Create database if it doesn't exist
+if [ "$RECREATE" = true ]; then
+    echo "Dropping database '$DB_NAME' if it exists..."
+    PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
+fi
+
 echo "Creating database '$DB_NAME' if it doesn't exist..."
 PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d postgres -c "CREATE DATABASE $DB_NAME;" 2>/dev/null || echo "Database '$DB_NAME' already exists or created successfully"
 
@@ -46,7 +64,7 @@ echo "Setting up database schema..."
 PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -f ./db/schema.sql
 PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USER -d $DB_NAME -f ./db/seed.sql
 
-echo "✅ PostgreSQL setup complete!"
+echo "PostgreSQL setup complete!"
 echo "Connection string: postgres://$DB_USER:$DB_PASSWORD@localhost:5432/$DB_NAME"
 echo ""
 echo "To test the connection, run:"

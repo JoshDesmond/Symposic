@@ -2,8 +2,9 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import Anthropic from '@anthropic-ai/sdk';
-import usersRouter from './auth/auth';
-import interviewRouter, { setDependencies } from './claude/interview';
+import authRouter from './routes/auth.routes';
+import claudeRouter from './routes/claude.routes';
+import { ClaudeService } from './services/claude.service';
 import { closeDatabase } from './database';
 
 dotenv.config();
@@ -28,12 +29,14 @@ if (false) {
     apiKey: process.env.CLAUDE_API_KEY,
   });
 
-  // Inject dependencies into interview router
-  setDependencies(anthropic);
+  // Inject dependencies into claude service
+  const claudeService = new ClaudeService();
+  claudeService.setDependencies(anthropic);
 }
 
 // Mount routes
-app.use('/api', usersRouter);
+app.use('/api', authRouter);
+app.use('/api/claude', claudeRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
