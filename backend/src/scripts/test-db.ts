@@ -1,4 +1,4 @@
-import { db, getAllUsers, closeDatabase } from './database';
+import { db, getAllUsers, closeDatabase } from '../database';
 
 async function testDatabaseConnection() {
   console.debug('='.repeat(60));
@@ -126,5 +126,3 @@ async function testDatabaseConnection() {
 
 // Run the test
 testDatabaseConnection();
-
-

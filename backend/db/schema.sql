@@ -1,6 +1,5 @@
 BEGIN;
 
--- db/migrations/001_init.sql
 CREATE TABLE profiles (
   profile_id UUID PRIMARY KEY,
   phone TEXT UNIQUE NOT NULL,
