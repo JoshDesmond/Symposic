@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { ClaudeController } from '../controllers/claude.controller';
+import { ClaudeService } from './claude.service';
 
 const router = Router();
-const claudeController = new ClaudeController();
+const claudeService = new ClaudeService();
 
 // TODO implement and test interview endpoints
 
