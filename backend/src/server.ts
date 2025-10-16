@@ -27,7 +27,7 @@ const claudeService = new ClaudeService();
 
 // Mount routes
 app.use('/api', authRouter);
-app.use('/api/claude', claudeRouter);
+app.use('/api/interview', claudeRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
