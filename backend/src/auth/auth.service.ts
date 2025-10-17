@@ -4,7 +4,7 @@ import { db } from '../database';
 export class AuthService {
   // --- OTP Management ---
   private generateRandomCode(): number {
-    return Math.floor(100000 + Math.random() * 900000);
+    return Math.floor(1000000 + Math.random() * 9000000);
   }
 
   async storeOTP(phone: string): Promise<number> {

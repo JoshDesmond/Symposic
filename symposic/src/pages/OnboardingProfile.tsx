@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import OnboardingHeader from '../components/layout/OnboardingHeader'
 import OnboardingForm from '../components/onboarding/OnboardingForm'
 import InterviewStep from '../components/onboarding/InterviewStep'
+import OTPValidationStep from '@/components/onboarding/OTPValidationStep'
 
 const OnboardingProfile: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -15,6 +16,8 @@ const OnboardingProfile: React.FC = () => {
       case 1:
         return <OnboardingForm onNext={handleNext} />
       case 2:
+        return <OTPValidationStep onNext={handleNext} />
+      case 3:
         return <InterviewStep />
       default:
         return <OnboardingForm onNext={handleNext} />
