@@ -2,12 +2,15 @@ import React, { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347'
+
 interface OTPValidationStepProps {
   onNext: () => void
   onBack?: () => void
+  phoneNumber: string
 }
 
-const OTPValidationStep: React.FC<OTPValidationStepProps> = ({ onNext, onBack }) => {
+const OTPValidationStep: React.FC<OTPValidationStepProps> = ({ onNext, onBack, phoneNumber }) => {
   const [otp, setOtp] = useState<string[]>(new Array(7).fill(''))
   const [isVerifying, setIsVerifying] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -78,23 +81,32 @@ const OTPValidationStep: React.FC<OTPValidationStepProps> = ({ onNext, onBack })
     setErrorMessage('')
 
     try {
-      // Stub verification logic
       const otpString = otp.join('')
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const response = await fetch(`${API_URL}/api/verify-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          phone: phoneNumber,
+          code: Number(otpString)
+        })
+      })
       
-      // For demo purposes, accept any 7-digit code except '1234567'
-      if (otpString === '1234567') {
+      if (response.ok){
+        console.log('Verification successful, cookie set automatically')
+        onNext()
+      } else {
         setHasError(true)
         setErrorMessage('Invalid verification code. Please try again.')
-      } else {
-        // Success - proceed to next step
-        onNext()
       }
+      
     } catch (error) {
       setHasError(true)
       setErrorMessage('Something went wrong. Please try again.')
+      console.log(`Error verifying OTP: ${error}`)
     } finally {
       setIsVerifying(false)
     }

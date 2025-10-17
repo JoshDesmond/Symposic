@@ -9,7 +9,6 @@
     "dev": "tsx watch src/server.ts",
     "test": "jest --verbose=false",
     "test:coverage": "jest --coverage",
-    "test:db": "tsx src/scripts/test-db.ts",
     "test:auth": "tsx src/scripts/test-auth.ts",
     "db:setup": "./src/scripts/setup-db.sh",
     "db:reset": "./src/scripts/setup-db.sh --recreate"
@@ -19,6 +18,8 @@
   "type": "commonjs",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
+    "@types/cookie-parser": "^1.4.9",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",

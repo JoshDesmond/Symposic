@@ -43,7 +43,13 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
     }
     
     const token = await authService.createSession(phone);
-    res.json({ token });
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+    res.json({ success: true });
   } catch (error) {
     console.log(`Database lookup error: ${error}`);
     res.status(500).json({ error: 'Failed to verify code' });

@@ -19,7 +19,6 @@ describe('Database Connection Tests', () => {
   test('should get PostgreSQL version', async () => {
     const versionResult = await db.one('SELECT version()');
     expect(versionResult.version).toContain('PostgreSQL');
-    console.log('PostgreSQL version:', versionResult.version);
   });
 
   test('should list all tables', async () => {
@@ -31,10 +30,6 @@ describe('Database Connection Tests', () => {
     `);
     
     expect(Array.isArray(tables)).toBe(true);
-    console.log('Tables found:', tables.length);
-    tables.forEach((table: any, index: number) => {
-      console.log(`  ${index + 1}. ${table.table_name}`);
-    });
   });
 
   test('should verify expected tables exist', async () => {
@@ -50,7 +45,6 @@ describe('Database Connection Tests', () => {
     
     expectedTables.forEach(tableName => {
       expect(tableNames).toContain(tableName);
-      console.log(`✓ Table '${tableName}' exists`);
     });
   });
 
@@ -60,19 +54,12 @@ describe('Database Connection Tests', () => {
     for (const table of expectedTables) {
       const count = await db.one(`SELECT COUNT(*) as count FROM ${table}`);
       expect(typeof count.count).toBe('string');
-      console.log(`${table}: ${count.count} rows`);
     }
   });
 
   test('should test getAllUsers function', async () => {
     const users = await getAllUsers();
     expect(Array.isArray(users)).toBe(true);
-    console.log(`Found ${users.length} profiles in database`);
-    
-    if (users.length > 0) {
-      console.log('Sample profile (first record):');
-      console.log(JSON.stringify(users[0], null, 2));
-    }
   });
 
   test('should support transactions', async () => {
@@ -87,6 +74,5 @@ describe('Database Connection Tests', () => {
       process.env.DB_NAME || 'symposic'
     ]);
     expect(poolStats[0].count).toBeDefined();
-    console.log('Active connections to database:', poolStats[0].count);
   });
 });

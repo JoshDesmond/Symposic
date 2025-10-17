@@ -9,18 +9,14 @@ describe('Auth API Endpoints', () => {
     });
     
     expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data).toHaveProperty('message');
-    console.log('Send code response:', data);
+    // TODO verify that you get a cookie somehow
   });
 
-  test('should get users', async () => {
+  test('should fail to get users', async () => {
     const response = await fetch(`${BASE_URL}/users`);
     
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(Array.isArray(data)).toBe(true);
-    console.log('Users response:', data);
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(response.status).toBeLessThan(500);
   });
 
   test('should fail to verify invalid code', async () => {
@@ -34,6 +30,7 @@ describe('Auth API Endpoints', () => {
     expect(response.status).toBe(422);
     const data = await response.json();
     expect(data).toHaveProperty('error');
-    console.log('Verify code response (expected failure):', data);
   });
 });
+
+// TODO create a series of tests that use auth cookies

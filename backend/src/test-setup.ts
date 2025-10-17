@@ -1,6 +1,3 @@
-// TODO do I actually need this file? Is it getting called?
-console.log(`Test setup file called`);
-
 // Test setup file for Jest
 import dotenv from 'dotenv';
 

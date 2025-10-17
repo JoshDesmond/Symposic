@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import authRouter from './auth/auth.routes';
 import claudeRouter from './claude/claude.routes';
 import { ClaudeService } from './claude/claude.service';
@@ -13,8 +14,12 @@ console.log(`Creating server`);
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '8347');
 
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins for development
+  credentials: true // Allow cookies to be sent
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Log all incoming requests
 app.use((req, res, next) => {
