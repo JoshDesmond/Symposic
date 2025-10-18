@@ -20,7 +20,7 @@ export class AuthService {
   }
 
   async verifyOTP(phone: string, code: number): Promise<boolean> {
-    console.log(`Performing DB Lookup`);
+    console.log(`Verifying OTP for ${phone} with code ${code}`);
 
     const result = await db.oneOrNone(
       'SELECT * FROM otp_codes WHERE phone = $1 AND code = $2 AND expires_at > NOW()',

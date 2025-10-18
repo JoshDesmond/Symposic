@@ -28,6 +28,7 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
   const { phone, code } = req.body;
   
   if (!phone || !code) {
+    console.error(`Error: /verify-code called with missing phone (${phone}) or code (${code})`);
     res.status(400).json({ error: 'Phone and code required' });
     return;
   }
