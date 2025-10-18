@@ -19,11 +19,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
     "@types/cookie-parser": "^1.4.9",
+    "@types/uuid": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
-    "pg-promise": "^12.2.0"
+    "pg-promise": "^12.2.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

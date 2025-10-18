@@ -4,11 +4,11 @@ import { Input } from '@/components/ui/input'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347'
 
-interface SignInOrSignUpProps {
+interface PhoneEntryStepProps {
   onNext: (phoneNumber: string) => void
 }
 
-const SignInOrSignUp: React.FC<SignInOrSignUpProps> = ({ onNext }) => {
+const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [isValidPhone, setIsValidPhone] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -124,4 +124,4 @@ const SignInOrSignUp: React.FC<SignInOrSignUpProps> = ({ onNext }) => {
   )
 }
 
-export default SignInOrSignUp
+export default PhoneEntryStep

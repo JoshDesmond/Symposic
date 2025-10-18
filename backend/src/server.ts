@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRouter from './auth/auth.routes';
+import accountRouter from './account/account.routes';
 import claudeRouter from './claude/claude.routes';
 import { ClaudeService } from './claude/claude.service';
 import { closeDatabase } from './database';
@@ -32,6 +33,7 @@ const claudeService = new ClaudeService();
 
 // Mount routes
 app.use('/api', authRouter);
+app.use('/api/account', accountRouter);
 app.use('/api/interview', claudeRouter);
 
 // Health check endpoint

@@ -4,8 +4,21 @@ import { Input } from '@/components/ui/input'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347'
 
+interface OnboardingState {
+  profileId: string;
+  phone: string;
+  hasProfileData: boolean;
+  hasFinishedInterview: boolean;
+  profileData?: {
+    firstName: string;
+    lastName: string;
+    city: string;
+    state: string;
+  };
+}
+
 interface OTPValidationStepProps {
-  onNext: () => void
+  onNext: (onboardingState?: OnboardingState) => void
   onBack?: () => void
   phoneNumber: string
 }
@@ -95,9 +108,10 @@ const OTPValidationStep: React.FC<OTPValidationStepProps> = ({ onNext, onBack, p
         })
       })
       
-      if (response.ok){
+      if (response.ok) {
+        const data = await response.json()
         console.log('Verification successful, cookie set automatically')
-        onNext()
+        onNext(data.onboardingState) // Pass the onboarding state to determine next step
       } else {
         setHasError(true)
         setErrorMessage('Invalid verification code. Please try again.')

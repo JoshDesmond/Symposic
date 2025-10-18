@@ -13,7 +13,6 @@ CREATE TABLE profile_data (
   last_name TEXT NOT NULL,
   city TEXT NOT NULL,
   state CHAR(2) NOT NULL,
-  linkedin_url TEXT, 
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
 );
 
@@ -28,8 +27,11 @@ CREATE TABLE interviews (
   profile_id UUID NOT NULL,
   interview_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
+  finished_at TIMESTAMPTZ,
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
 );
+
+-- TODO a good constraint would be to ensure an interview only exists when profile_data exists
 
 CREATE TABLE sessions (
   session_token TEXT PRIMARY KEY,

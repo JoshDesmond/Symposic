@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { requireAuth } from './auth.middleware';
 import { getAllUsers } from '../database';
+import { AccountService } from '../account/account.service';
 
 const router = Router();
 const authService = new AuthService();
+const accountService = new AccountService();
 
 // Auth routes
 router.post('/send-code', async (req: Request, res: Response): Promise<void> => {
@@ -43,6 +45,16 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
       return;
     }
     
+    // Check if profile exists, create if not
+    let profile = await accountService.getProfileByPhone(phone);
+    if (!profile) {
+      console.log(`Creating new profile for ${phone}`);
+      await accountService.createProfile(phone);
+    }
+
+    // Get onboarding state
+    const onboardingState = await accountService.getOnboardingState(phone);
+
     const token = await authService.createSession(phone);
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -50,7 +62,11 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
       sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
-    res.json({ success: true });
+    
+    res.json({ 
+      success: true,
+      onboardingState: onboardingState
+    });
   } catch (error) {
     console.log(`Database lookup error: ${error}`);
     res.status(500).json({ error: 'Failed to verify code' });

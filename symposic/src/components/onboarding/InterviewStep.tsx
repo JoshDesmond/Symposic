@@ -6,19 +6,20 @@ interface Message {
 }
 
 interface InterviewStepProps {
-  profileId?: string;
+  profileName: string; // TODO: Get this from profile data
+  onComplete: () => void;
+  onBack?: () => void;
 }
 
-const InterviewStep = ({ profileId = 'test-profile-123' }: InterviewStepProps) => {
+const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: InterviewStepProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [hasStarted, setHasStarted] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
-  const API_URL = 'http://localhost:8347'; // Update this to match your server
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,37 +29,62 @@ const InterviewStep = ({ profileId = 'test-profile-123' }: InterviewStepProps) =
     scrollToBottom();
   }, [messages]);
 
+  // Start the interview automatically when component mounts
   useEffect(() => {
-    // Automatically start the interview when component mounts
-    if (hasStarted && !sessionId) {
-      startInterview();
-    }
-  }, [hasStarted, sessionId]);
-
-  const startInterview = async () => {
-    setHasStarted(true);
-    setIsLoading(true);
+    startInterview();
+    
+    // Cleanup function to abort any pending requests
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+  
+  const getFirstMessage = async () => {
+    abortControllerRef.current = new AbortController();
     
     try {
-      const response = await fetch(`${API_URL}/api/interview/chat`, {
+      const response = await fetch(`${API_URL}/api/interview/initial`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({
-          profile_id: profileId,
-          message: 'Hello, I am ready to start the interview.',
-          session_id: null
-        })
+          name: profileName
+        }),
+        signal: abortControllerRef.current.signal
       });
-      
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setSessionId(data.session_id);
-      setMessages([{ role: 'assistant', content: data.response }]);
+      
+      // Add the initial message as the first assistant message
+      setMessages([{ role: 'assistant', content: data.message }]);
     } catch (error) {
-      console.error('Failed to start interview:', error);
-      setMessages([{ role: 'assistant', content: 'Sorry, there was an error starting the interview. Please try again.' }]);
-    } finally {
-      setIsLoading(false);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return;
+      }
+      console.error('Failed to get initial message:', error);
+      // Add error message to conversation
+      setMessages([{ 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error starting the interview. Please try again.' 
+      }]);
     }
+  }
+  
+
+
+  const startInterview = async () => {
+    setIsLoading(true);
+    await getFirstMessage();
+    setIsLoading(false);
   };
 
   const sendMessage = async () => {
@@ -69,32 +95,18 @@ const InterviewStep = ({ profileId = 'test-profile-123' }: InterviewStepProps) =
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/api/interview/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile_id: profileId,
-          message: userMessage,
-          session_id: sessionId
-        })
-      });
-
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-      
-      if (data.is_complete) {
-        setIsComplete(true);
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    // TODO: Implement sendMessage functionality
+    // This will need to call the /api/claude endpoint with the conversation history
+    console.log('Send message functionality not yet implemented');
+    
+    // For now, just simulate a response
+    setTimeout(() => {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please try again.' 
+        content: 'Thanks for your message! The full conversation functionality will be implemented next.' 
       }]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
