@@ -144,7 +144,7 @@ const IntroductionFlow: React.FC = () => {
             }`}>
               <Button 
                 size="lg" 
-                onClick={() => navigate('/onboarding')}
+                onClick={() => navigate('/sign-in')}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-12 py-6 text-lg rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105"
                 style={{ animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
               >

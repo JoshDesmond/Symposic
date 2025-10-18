@@ -3,19 +3,13 @@ import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { useOnboarding } from '../../contexts/OnboardingContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347'
 
 interface OnboardingFormProps {
   onNext: () => void
   onBack?: () => void
-  phoneNumber: string
-  existingProfileData?: {
-    firstName: string
-    lastName: string
-    city: string
-    state: string
-  }
 }
 
 interface FormData {
@@ -29,7 +23,7 @@ interface FormData {
  * Helper function to check if profile data is identical
  */
 const isProfileDataIdentical = (
-  existing: OnboardingFormProps['existingProfileData'],
+  existing: { firstName: string; lastName: string; city: string; state: string } | undefined,
   newData: FormData
 ): boolean => {
   if (!existing) return false;
@@ -42,17 +36,18 @@ const isProfileDataIdentical = (
   );
 };
 
-const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext, onBack, existingProfileData }) => {
+const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
+  const { onboardingState, updateProfileData } = useOnboarding()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
   const form = useForm<FormData>({
     defaultValues: {
-      firstName: existingProfileData?.firstName || '',
-      lastName: existingProfileData?.lastName || '',
-      city: existingProfileData?.city || '',
-      state: existingProfileData?.state || ''
+      firstName: onboardingState?.profileData?.firstName || '',
+      lastName: onboardingState?.profileData?.lastName || '',
+      city: onboardingState?.profileData?.city || '',
+      state: onboardingState?.profileData?.state || ''
     }
   })
 
@@ -62,7 +57,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext, onBack, existin
     setErrorMessage('')
 
     // Skip API call if data is identical to existing profile data
-    if (isProfileDataIdentical(existingProfileData, data)) {
+    if (isProfileDataIdentical(onboardingState?.profileData, data)) {
       console.log('Profile data is identical, skipping update')
       onNext()
       return
@@ -85,6 +80,8 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext, onBack, existin
 
       if (response.ok) {
         console.log('Profile updated successfully')
+        // Update the context with the new profile data
+        updateProfileData(data)
         onNext()
       } else {
         const errorData = await response.json()
@@ -100,10 +97,14 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext, onBack, existin
     }
   }
 
+  const signInMessage = "Great! Now we'll need some basic information:"
+  const returnMessage = "Welcome back! Let's verify your account information:"
+  const displayMessage = onboardingState?.profileData ? returnMessage : signInMessage
+
   return (
     <div className="max-w-lg mx-auto bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700 shadow-2xl p-8">
-      <h2 className="text-xl font-medium text-white mb-6 text-center"> {/* TODO dynamic welcome back message based on existingProfileData */}
-        Great! Now we'll need some basic information:
+      <h2 className="text-lg font-medium text-white mb-6 text-center">
+        {displayMessage}
       </h2>
       
       {hasError && (

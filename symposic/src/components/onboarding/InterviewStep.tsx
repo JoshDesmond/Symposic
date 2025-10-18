@@ -95,18 +95,44 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    // TODO: Implement sendMessage functionality
-    // This will need to call the /api/claude endpoint with the conversation history
-    console.log('Send message functionality not yet implemented');
-    
-    // For now, just simulate a response
-    setTimeout(() => {
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const response = await fetch(`${API_URL}/api/interview/`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: profileName,
+          messages: [...messages, { role: 'user', content: userMessage }]
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Add the assistant's response to the conversation
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return;
+      }
+      console.error('Failed to send message:', error);
+      // Add error message to conversation
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Thanks for your message! The full conversation functionality will be implemented next.' 
+        content: 'Sorry, I encountered an error processing your message. Please try again.' 
       }]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
