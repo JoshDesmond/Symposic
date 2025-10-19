@@ -12,6 +12,7 @@
     "typescript": "^5.0.0"
   },
   "files": [
-    "types.ts"
+    "types.ts",
+    "constants.ts"
   ]
 }

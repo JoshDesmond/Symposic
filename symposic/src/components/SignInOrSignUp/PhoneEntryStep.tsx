@@ -15,9 +15,22 @@ const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
   const [error, setError] = useState('')
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '') // Only allow digits
-    setPhoneNumber(value)
-    setIsValidPhone(value.length === 10)
+    // Remove all non-digit characters
+    const digitsOnly = e.target.value.replace(/\D/g, '')
+    
+    // Limit to 10 digits maximum
+    const limitedDigits = digitsOnly.slice(0, 10)
+    
+    // Format with dashes: xxx-xxx-xxxx
+    let formatted = limitedDigits
+    if (limitedDigits.length > 6) {
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`
+    } else if (limitedDigits.length > 3) {
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`
+    }
+    
+    setPhoneNumber(formatted)
+    setIsValidPhone(limitedDigits.length === 10)
     setError('') // Clear error when user types
   }
 
@@ -28,7 +41,9 @@ const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
     setError('')
     
     try {
-      const fullPhoneNumber = `+1${phoneNumber}`
+      // Remove dashes from formatted phone number for API call
+      const digitsOnly = phoneNumber.replace(/\D/g, '')
+      const fullPhoneNumber = `+1${digitsOnly}`
       
       const response = await fetch(`${API_URL}/api/send-code`, {
         method: 'POST',
@@ -43,7 +58,7 @@ const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
         throw new Error(errorData.error || 'Failed to send verification code')
       }
       
-      // If successful, proceed to next step
+      // If successful, proceed to next step with formatted phone number
       onNext(fullPhoneNumber)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code')
@@ -63,12 +78,12 @@ const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
           <label className="text-gray-300 text-sm font-medium mb-2 block">
             Phone Number
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-stretch">
             {/* Area Code Dropdown */}
             <div className="relative">
               <button
                 type="button"
-                className="flex items-center gap-2 bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg hover:border-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 min-w-[120px]"
+                className="flex items-center gap-2 bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg hover:border-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 min-w-[120px] h-full"
               >
                 <span className="text-lg">🇺🇸🇨🇦</span>
                 <span className="text-sm">+1</span>
@@ -92,7 +107,7 @@ const PhoneEntryStep: React.FC<PhoneEntryStepProps> = ({ onNext }) => {
                 onChange={handlePhoneChange}
                 placeholder="Phone number"
                 maxLength={20}
-                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 h-full"
               />
             </div>
           </div>

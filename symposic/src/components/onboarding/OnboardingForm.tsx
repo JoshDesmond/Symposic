@@ -2,10 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useOnboarding } from '../../contexts/OnboardingContext'
+import { US_STATES } from '../../../../shared/constants'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8347'
+
+// Validation helper functions
+const validateName = (value: string): string | true => {
+  if (!value.trim()) return 'This field is required'
+  if (value.length > 50) return 'Name must be 50 characters or less'
+  if (!/^[a-zA-Z\s\-'\.]+$/.test(value)) return 'Name can only contain letters, spaces, hyphens, apostrophes, and periods'
+  if (value.trim().length < 2) return 'Name must be at least 2 characters long'
+  return true
+}
+
+const validateCity = (value: string): string | true => {
+  if (!value.trim()) return 'This field is required'
+  if (value.length > 100) return 'City name must be 100 characters or less'
+  if (!/^[a-zA-Z\s\-'\.]+$/.test(value)) return 'City name can only contain letters, spaces, hyphens, apostrophes, and periods'
+  if (value.trim().length < 2) return 'City name must be at least 2 characters long'
+  return true
+}
 
 interface OnboardingFormProps {
   onNext: () => void
@@ -143,13 +162,14 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
             <FormField
               control={form.control}
               name="firstName"
-              rules={{ required: 'First name is required' }}
+              rules={{ validate: validateName }}
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="text-gray-300">First Name</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
+                      maxLength={50}
                       className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500" 
                       placeholder="Enter first name"
                     />
@@ -161,13 +181,14 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
             <FormField
               control={form.control}
               name="lastName"
-              rules={{ required: 'Last name is required' }}
+              rules={{ validate: validateName }}
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="text-gray-300">Last Name</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
+                      maxLength={50}
                       className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500" 
                       placeholder="Enter last name"
                     />
@@ -182,13 +203,14 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
             <FormField
               control={form.control}
               name="city"
-              rules={{ required: 'City is required' }}
+              rules={{ validate: validateCity }}
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="text-gray-300">City</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
+                      maxLength={100}
                       className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500" 
                       placeholder="Enter city"
                     />
@@ -204,13 +226,24 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel className="text-gray-300">State</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500" 
-                      placeholder="Enter state"
-                    />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-blue-500">
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      {US_STATES.map((state) => (
+                        <SelectItem 
+                          key={state.code} 
+                          value={state.code}
+                          className="text-white hover:bg-gray-700 focus:bg-gray-700"
+                        >
+                          {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage className="text-red-400" />
                 </FormItem>
               )}
