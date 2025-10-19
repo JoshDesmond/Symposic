@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,16 +37,10 @@ const isProfileDataIdentical = (
 };
 
 const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
-  const { onboardingState, updateProfileData } = useOnboarding()
+  const { onboardingState, updateProfileData, isLoading } = useOnboarding()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  
-  // TODO there's a loading issue: On refresh, the onboardingState takes a second to load.
-  // The header text will change dynamically, but that causes a stutter
-  // The default form values will not populate.
-  // I'm not sure the best approach yet but will need to fix this
-  // Probably just wait until the formData is loaded until rendering the component
   
   const form = useForm<FormData>({
     defaultValues: {
@@ -56,6 +50,18 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
       state: onboardingState?.profileData?.state || ''
     }
   })
+
+  // Update form values when onboardingState changes (e.g., on direct navigation)
+  useEffect(() => {
+    if (onboardingState?.profileData) {
+      form.reset({
+        firstName: onboardingState.profileData.firstName || '',
+        lastName: onboardingState.profileData.lastName || '',
+        city: onboardingState.profileData.city || '',
+        state: onboardingState.profileData.state || ''
+      })
+    }
+  }, [onboardingState?.profileData, form])
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
@@ -106,6 +112,18 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
   const signInMessage = "Great! Now we'll need some basic information:"
   const returnMessage = "Welcome back! Let's verify your account information:"
   const displayMessage = onboardingState?.profileData ? returnMessage : signInMessage
+
+  // Show loading state while onboarding data is being fetched
+  if (isLoading) {
+    return (
+      <div className="max-w-lg mx-auto bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700 shadow-2xl p-8">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-300">Loading...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-lg mx-auto bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700 shadow-2xl p-8">

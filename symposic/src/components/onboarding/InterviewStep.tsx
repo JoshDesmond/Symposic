@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { Interview } from '@shared/types';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 interface InterviewStepProps {
   profileName: string; // TODO: Get this from profile data
@@ -11,11 +8,11 @@ interface InterviewStepProps {
   onBack?: () => void;
 }
 
-const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: InterviewStepProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+const InterviewStep = ({ profileName = 'Test Name' }: InterviewStepProps) => {
+  const { onboardingState, setOnboardingState } = useOnboarding();
+  const [interview, setInterview] = useState<Interview | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
@@ -27,11 +24,17 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [interview?.messages]);
 
-  // Start the interview automatically when component mounts
+  // Initialize interview from context or start new one
   useEffect(() => {
-    startInterview();
+    if (onboardingState?.interview) {
+      // Use existing interview from context
+      setInterview(onboardingState.interview);
+    } else {
+      // Start new interview
+      startInterview();
+    }
     
     // Cleanup function to abort any pending requests
     return () => {
@@ -39,7 +42,7 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
         abortControllerRef.current.abort();
       }
     };
-  }, []);
+  }, [onboardingState?.interview]);
   
   const getFirstMessage = async () => {
     abortControllerRef.current = new AbortController();
@@ -63,8 +66,16 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
 
       const data = await response.json();
       
-      // Add the initial message as the first assistant message
-      setMessages([{ role: 'assistant', content: data.message }]);
+      // Set the complete interview from the response
+      setInterview(data.interview);
+      
+      // Update the context with the new interview
+      if (onboardingState && setOnboardingState) {
+        setOnboardingState({
+          ...onboardingState,
+          interview: data.interview
+        });
+      }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Request was aborted');
@@ -72,10 +83,13 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
       }
       console.error('Failed to get initial message:', error);
       // Add error message to conversation
-      setMessages([{ 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error starting the interview. Please try again.' 
-      }]);
+      setInterview({
+        createdAt: new Date().toISOString(),
+        messages: [{ 
+          role: 'assistant', 
+          content: 'Sorry, I encountered an error starting the interview. Please try again.' 
+        }]
+      });
     }
   }
   
@@ -88,11 +102,17 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
   };
 
   const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading || isComplete) return;
+    if (!inputValue.trim() || isLoading || !interview) return;
 
     const userMessage = inputValue;
     setInputValue('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    
+    // Create updated interview with new user message
+    const updatedInterview: Interview = {
+      ...interview,
+      messages: [...interview.messages, { role: 'user' as const, content: userMessage }]
+    };
+    setInterview(updatedInterview);
     setIsLoading(true);
 
     abortControllerRef.current = new AbortController();
@@ -105,8 +125,7 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
         },
         credentials: 'include',
         body: JSON.stringify({
-          name: profileName,
-          messages: [...messages, { role: 'user', content: userMessage }]
+          interview: updatedInterview
         }),
         signal: abortControllerRef.current.signal
       });
@@ -117,8 +136,20 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
 
       const data = await response.json();
       
-      // Add the assistant's response to the conversation
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      // Update with the complete interview from the response
+      setInterview(data.interview);
+      
+      // Update the context with the updated interview
+      if (onboardingState && setOnboardingState) {
+        setOnboardingState({
+          ...onboardingState,
+          interview: data.interview
+        });
+      }
+      
+      // TODO: Check if interview is finished and call onComplete()
+      // This will be implemented when the backend supports ending conversations
+      // For now, the interview continues indefinitely
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Request was aborted');
@@ -126,10 +157,13 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
       }
       console.error('Failed to send message:', error);
       // Add error message to conversation
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error processing your message. Please try again.' 
-      }]);
+      setInterview(prev => prev ? {
+        ...prev,
+        messages: [...prev.messages, { 
+          role: 'assistant', 
+          content: 'Sorry, I encountered an error processing your message. Please try again.' 
+        }]
+      } : null);
     } finally {
       setIsLoading(false);
     }
@@ -149,44 +183,37 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
         <div className="flex flex-col h-[600px]">
           <h2 className="text-2xl font-medium text-white mb-6">Professional Interview</h2>
         
-        <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-600">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-600">
+            {interview?.messages.map((msg, index) => (
               <div
-                className={`max-w-[80%] p-4 rounded-lg ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-100'
-                }`}
+                key={index}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-              </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-700 text-gray-100 p-4 rounded-lg">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div
+                  className={`max-w-[80%] p-4 rounded-lg ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-100'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {isComplete ? (
-          <div className="bg-green-900/30 border border-green-700 rounded-lg p-4">
-            <p className="text-green-400 text-center">
-              Interview completed successfully! ✨
-            </p>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-700 text-gray-100 p-4 rounded-lg">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        ) : (
+   
           <div className="flex gap-2">
             <textarea
               value={inputValue}
@@ -205,7 +232,6 @@ const InterviewStep = ({ profileName = 'Test Name', onComplete, onBack }: Interv
               Send
             </button>
           </div>
-        )}
         </div>
       </div>
     </div>

@@ -19,13 +19,9 @@ export interface OnboardingState {
 export interface InterviewMessage {
   role: 'user' | 'assistant';
   content: string;
-  messageId: number;
-  createdAt: string;
 }
 
 export interface Interview {
-  interviewId: number;
-  profileId: string;
   createdAt: string;
   finishedAt?: string;
   messages: InterviewMessage[];

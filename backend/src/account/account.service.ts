@@ -59,7 +59,8 @@ export class AccountService {
       `SELECT p.profile_id, p.phone,
               pd.first_name, pd.last_name, pd.city, pd.state,
               CASE WHEN pd.profile_id IS NOT NULL THEN true ELSE false END as has_profile_data,
-              CASE WHEN i.finished_at IS NOT NULL THEN true ELSE false END as has_finished_interview
+              CASE WHEN i.finished_at IS NOT NULL THEN true ELSE false END as has_finished_interview,
+              i.interview_data, i.created_at, i.finished_at
        FROM profiles p
        LEFT JOIN profile_data pd ON p.profile_id = pd.profile_id
        LEFT JOIN interviews i ON p.profile_id = i.profile_id
@@ -84,6 +85,16 @@ export class AccountService {
         lastName: result.last_name,
         city: result.city,
         state: result.state
+      };
+    }
+
+    // Include interview data if it exists
+    if (result.interview_data) {
+      const interviewData = result.interview_data;
+      onboardingState.interview = {
+        createdAt: result.created_at,
+        finishedAt: result.finished_at,
+        messages: interviewData.messages
       };
     }
 

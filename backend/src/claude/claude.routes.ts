@@ -1,45 +1,54 @@
 import { Router, Request, Response } from 'express';
 import { ClaudeService } from './claude.service';
 import { requireAuth } from '../auth/auth.middleware';
+import { Interview } from '@shared/types';
+import { db } from '../database';
 
 const router = Router();
 const claudeService = new ClaudeService();
 
-// TODO there should be a shared types for the messages array
 
 /**
  * Input Body Format:
  * {
- *   "messages": [
- *     {
- *       "role": "assistant",
- *       "content": "Hey Josh! Let's have a quick chat so I can understand who you are and connect you with amazing people. Just type naturally - tell me about your work, what excites you, what you're building or exploring. What's your story?"
- *     },
- *     {
- *       "role": "user", 
- *       "content": "I'm a fullstack developer. I've worked at a startup and am currently attempting work as a freelance developer helping small to medium businesses with their tech needs."
- *     }
- *   ]
+ *   "interview": {
+ *     "createdAt": "2024-01-01T00:00:00.000Z",
+ *     "messages": [
+ *       {
+ *         "role": "assistant",
+ *         "content": "Hey Josh! Let's have a quick chat..."
+ *       },
+ *       {
+ *         "role": "user", 
+ *         "content": "I'm a fullstack developer..."
+ *       }
+ *     ]
+ *   }
  * }
  * 
  * Expected Output:
  * {
- *   "message": "That's awesome! I love hearing about developers who are making the leap to freelancing. What's been the most interesting project you've worked on recently, and what kind of tech challenges are you most excited to tackle?"
+ *   "interview": {
+ *     "createdAt": "2024-01-01T00:00:00.000Z",
+ *     "messages": [
+ *       // ... existing messages plus new assistant message at next index
+ *     ]
+ *   }
  * }
  */
 router.post('/', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { messages } = req.body;
+    const { interview } = req.body;
     const phone = (req as any).userPhone;
     
     // Validate required fields
-    if (!messages || !Array.isArray(messages)) {
-      res.status(400).json({ error: 'Name and messages array are required' });
+    if (!interview || !interview.messages || !Array.isArray(interview.messages)) {
+      res.status(400).json({ error: 'Interview object with messages array is required' });
       return;
     }
 
     // Validate message structure - each message must have role and content
-    for (const message of messages) {
+    for (const message of interview.messages) {
       if (!message.role || !message.content) {
         res.status(400).json({ error: 'Each message must have both role and content fields' });
         return;
@@ -52,14 +61,49 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
     
     // Food for thought: A sufficiently motivated prompt injector could modify the assistant's messages and upload fully custom text here as is
 
-    const nextMessage = await claudeService.getNextMessage(messages);
-    res.json({ message: nextMessage });
+    const updatedInterview = await claudeService.getNextMessage(interview);
+    
+    // Update the interview in the database
+    const result = await db.result(
+      `UPDATE interviews 
+       SET interview_data = $1 
+       FROM profiles 
+       WHERE interviews.profile_id = profiles.profile_id 
+         AND profiles.phone = $2`,
+      [JSON.stringify(updatedInterview), phone]
+    );
+
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: 'Interview or profile not found' });
+      return;
+    }
+
+    res.json({ interview: updatedInterview });
   } catch (error) {
     console.error('Error getting Claude response:', error);
     res.status(500).json({ error: `Error: ${error}` });
   }
 });
 
+/**
+ * Input Body Format:
+ * {
+ *   "name": "Josh"
+ * }
+ * 
+ * Expected Output:
+ * {
+ *   "interview": {
+ *     "createdAt": "2024-01-01T00:00:00.000Z",
+ *     "messages": [
+ *       {
+ *         "role": "assistant",
+ *         "content": "Hey Josh! Let's have a quick chat..."
+ *       }
+ *     ]
+ *   }
+ * }
+ */
 router.post('/initial', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const { name } = req.body;
@@ -71,11 +115,32 @@ router.post('/initial', requireAuth, async (req: Request, res: Response): Promis
     }
 
     const initialMessage = claudeService.getInitialPrompt(name);
+    const interviewData: Interview = {
+      createdAt: new Date().toISOString(),
+      messages: [initialMessage]
+    };
     
-    // TODO create interviews record in database (requires a join to get profile_id from phone)
-    // TODO push initial message to interview_messages table
+    // Create interview record in database with phone join
+    const result = await db.one(
+      `INSERT INTO interviews (profile_id, interview_data) 
+       SELECT profile_id, $2
+       FROM profiles 
+       WHERE phone = $1
+       RETURNING interview_id, created_at`,
+      [phone, JSON.stringify(interviewData)]
+    );
 
-    res.json({ message: initialMessage });
+    if (!result) {
+      res.status(404).json({ error: 'Profile not found' });
+      return;
+    }
+
+    const interview: Interview = {
+      createdAt: result.created_at,
+      messages: interviewData.messages
+    };
+
+    res.json({ interview });
   } catch (error) {
     console.error('Error loading initial interview message:', error);
     res.status(500).json({ error: `Error: ${error}` });

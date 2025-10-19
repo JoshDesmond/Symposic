@@ -5,6 +5,7 @@ import { requireAuth } from '../auth/auth.middleware';
 const router = Router();
 const accountService = new AccountService();
 
+// TODO, is this dead code? Might be useful, but, also might not be used right now
 // Get profile endpoint
 router.get('/profile', requireAuth, async (req: Request, res: Response): Promise<void> => {
   const phone = (req as any).userPhone;
@@ -24,6 +25,7 @@ router.get('/profile', requireAuth, async (req: Request, res: Response): Promise
   }
 });
 
+// TODO, is this dead code? Remove this?
 // Update profile endpoint
 router.put('/profile', requireAuth, async (req: Request, res: Response): Promise<void> => {
   const { firstName, lastName, city, state } = req.body;

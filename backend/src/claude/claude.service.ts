@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { InterviewMessage } from '@shared/types';
+import { Interview, InterviewMessage } from '@shared/types';
 
 // Import prompts
 const INITIAL_PROMPT = readFileSync(join(__dirname, 'prompt.txt'), 'utf-8');
@@ -26,9 +26,7 @@ export class ClaudeService {
     }
   }
   
-  // TODO return an InterviewMessage object with the role 'assistant' and the content of the next message
-  // input: Also an InterviewMessage object with the role 'user' and the content of the user's message
-  async getNextMessage(messages: Array<{ role: 'user' | 'assistant'; content: string }> ): Promise<string> {
+  async getNextMessage(interview: Interview): Promise<Interview> {
     if (!this.anthropic) {
       throw new Error('Claude service not initialized');
     }
@@ -37,15 +35,21 @@ export class ClaudeService {
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 512,
       system: SYSTEM_PROMPT,
-      messages: messages
+      messages: interview.messages
     });
 
-    return response.content[0].type === 'text' ? response.content[0].text : '';
+    const content = response.content[0].type === 'text' ? response.content[0].text : '';
+    
+    // Add the new assistant message to the interview
+    return {
+      ...interview,
+      messages: [...interview.messages, { role: 'assistant', content }]
+    };
   }
 
-  // TODO return an InterviewMessage object with the role 'assistant' and the content of the initial prompt
-  getInitialPrompt(name: string): string {
-    return INITIAL_PROMPT.replace('{{name}}', name);
+  getInitialPrompt(name: string): InterviewMessage {
+    const content = INITIAL_PROMPT.replace('{{name}}', name);
+    return { role: 'assistant', content };
   }
 
   // TODO implement claude service methods
