@@ -61,24 +61,29 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
     
     // Food for thought: A sufficiently motivated prompt injector could modify the assistant's messages and upload fully custom text here as is
 
-    const updatedInterview = await claudeService.getNextMessage(interview);
+    const { interview: updatedInterview, isComplete } = await claudeService.getNextMessage(interview);
     
     // Update the interview in the database
-    const result = await db.result(
-      `UPDATE interviews 
-       SET interview_data = $1 
-       FROM profiles 
-       WHERE interviews.profile_id = profiles.profile_id 
-         AND profiles.phone = $2`,
-      [JSON.stringify(updatedInterview), phone]
-    );
+    const updateQuery = isComplete 
+      ? `UPDATE interviews 
+         SET interview_data = $1, finished_at = NOW()
+         FROM profiles 
+         WHERE interviews.profile_id = profiles.profile_id 
+           AND profiles.phone = $2`
+      : `UPDATE interviews 
+         SET interview_data = $1 
+         FROM profiles 
+         WHERE interviews.profile_id = profiles.profile_id 
+           AND profiles.phone = $2`;
+    
+    const result = await db.result(updateQuery, [JSON.stringify(updatedInterview), phone]);
 
     if (result.rowCount === 0) {
       res.status(404).json({ error: 'Interview or profile not found' });
       return;
     }
 
-    res.json({ interview: updatedInterview });
+    res.json({ interview: updatedInterview, isComplete });
   } catch (error) {
     console.error('Error getting Claude response:', error);
     res.status(500).json({ error: `Error: ${error}` });

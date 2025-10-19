@@ -26,9 +26,29 @@ export class ClaudeService {
     }
   }
   
-  async getNextMessage(interview: Interview): Promise<Interview> {
+  async getNextMessage(interview: Interview): Promise<{ interview: Interview; isComplete: boolean }> {
     if (!this.anthropic) {
       throw new Error('Claude service not initialized');
+    }
+
+    // Check if we've reached the message limit (failsafe)
+    const assistantMessages = interview.messages.filter(m => m.role === 'assistant').length;
+    const MAX_ASSISTANT_MESSAGES = 4; // Including initial prompt
+
+    if (assistantMessages >= MAX_ASSISTANT_MESSAGES) {
+      // Force completion with final message
+      const finalMessage = {
+        role: 'assistant' as const,
+        content: "Perfect - based on everything you've shared, I'll start looking for a group that matches your vibe and interests. You'll get a text from me when I've found the right networking opportunity for you. Thanks for sharing your story!"
+      };
+      
+      return {
+        interview: {
+          ...interview,
+          messages: [...interview.messages, finalMessage]
+        },
+        isComplete: true
+      };
     }
 
     const response = await this.anthropic.messages.create({
@@ -42,8 +62,11 @@ export class ClaudeService {
     
     // Add the new assistant message to the interview
     return {
-      ...interview,
-      messages: [...interview.messages, { role: 'assistant', content }]
+      interview: {
+        ...interview,
+        messages: [...interview.messages, { role: 'assistant', content }]
+      },
+      isComplete: false
     };
   }
 

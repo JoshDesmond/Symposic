@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Interview } from '@shared/types';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useNavigate } from 'react-router-dom';
 
 interface InterviewStepProps {
   profileName: string; // TODO: Get this from profile data
@@ -10,9 +11,11 @@ interface InterviewStepProps {
 
 const InterviewStep = ({ profileName = 'Test Name' }: InterviewStepProps) => {
   const { onboardingState, setOnboardingState } = useOnboarding();
+  const navigate = useNavigate();
   const [interview, setInterview] = useState<Interview | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInterviewComplete, setIsInterviewComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
@@ -147,9 +150,11 @@ const InterviewStep = ({ profileName = 'Test Name' }: InterviewStepProps) => {
         });
       }
       
-      // TODO: Check if interview is finished and call onComplete()
-      // This will be implemented when the backend supports ending conversations
-      // For now, the interview continues indefinitely
+      // Check if interview is finished
+      if (data.isComplete) {
+        console.log('Interview completed');
+        setIsInterviewComplete(true);
+      }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Request was aborted');
@@ -219,19 +224,30 @@ const InterviewStep = ({ profileName = 'Test Name' }: InterviewStepProps) => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your response..."
+              placeholder={isInterviewComplete ? "Interview completed" : "Type your response..."}
               className="flex-1 p-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
               rows={2}
-              disabled={isLoading}
+              disabled={isLoading || isInterviewComplete}
             />
             <button
               onClick={sendMessage}
-              disabled={isLoading || !inputValue.trim()}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100"
+              disabled={isLoading || !inputValue.trim() || isInterviewComplete}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-700 disabled:to-gray-800 disabled:cursor-not-allowed disabled:opacity-50 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-105 disabled:transform-none"
             >
-              Send
+              {isInterviewComplete ? "Completed" : "Send"}
             </button>
           </div>
+          
+          {isInterviewComplete && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => navigate('/home')}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105"
+              >
+                Continue
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
