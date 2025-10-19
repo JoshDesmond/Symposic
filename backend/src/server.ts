@@ -16,7 +16,9 @@ const app = express();
 const PORT = parseInt(process.env.PORT ?? '8347');
 
 app.use(cors({
-  origin: true, // Allow all origins for development
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://symposic.net'] 
+    : true, // Allow all origins for development
   credentials: true // Allow cookies to be sent
 }));
 app.use(express.json());

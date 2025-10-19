@@ -22,6 +22,7 @@ router.post('/send-code', async (req: Request, res: Response): Promise<void> => 
     console.log(`Sending code ${code} to ${phone}`);
     res.json({ success: true });
   } catch (error) {
+    console.error('Error in /send-code endpoint:', error);
     res.status(500).json({ error: 'Failed to send code' });
   }
 });
