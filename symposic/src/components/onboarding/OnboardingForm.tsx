@@ -41,7 +41,13 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ onNext }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-
+  
+  // TODO there's a loading issue: On refresh, the onboardingState takes a second to load.
+  // The header text will change dynamically, but that causes a stutter
+  // The default form values will not populate.
+  // I'm not sure the best approach yet but will need to fix this
+  // Probably just wait until the formData is loaded until rendering the component
+  
   const form = useForm<FormData>({
     defaultValues: {
       firstName: onboardingState?.profileData?.firstName || '',

@@ -1,20 +1,6 @@
 import { randomUUID, UUID} from 'crypto';
 import { db } from '../database';
-
-export interface ProfileData {
-  firstName: string;
-  lastName: string;
-  city: string;
-  state: string;
-}
-
-export interface OnboardingState {
-  profileId: string;
-  phone: string;
-  hasProfileData: boolean;
-  hasFinishedInterview: boolean;
-  profileData?: ProfileData;
-}
+import { ProfileData, OnboardingState } from '@shared/types';
 
 export class AccountService {
   async createProfile(phone: string): Promise<UUID> {

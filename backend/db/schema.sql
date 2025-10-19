@@ -25,10 +25,19 @@ CREATE TABLE otp_codes (
 CREATE TABLE interviews (
   interview_id SERIAL PRIMARY KEY,
   profile_id UUID NOT NULL,
-  interview_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   finished_at TIMESTAMPTZ,
   FOREIGN KEY (profile_id) REFERENCES profiles(profile_id) ON DELETE CASCADE
+);
+
+CREATE TABLE interview_messages (
+  interview_id INTEGER NOT NULL,
+  message_id INTEGER NOT NULL, -- Manual increment starting at 0 per interview
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (interview_id, message_id),
+  FOREIGN KEY (interview_id) REFERENCES interviews(interview_id) ON DELETE CASCADE
 );
 
 -- TODO a good constraint would be to ensure an interview only exists when profile_data exists

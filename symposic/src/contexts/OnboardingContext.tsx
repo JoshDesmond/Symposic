@@ -1,17 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
-
-export interface OnboardingState {
-  profileId: string
-  phone: string
-  hasProfileData: boolean
-  hasFinishedInterview: boolean
-  profileData?: {
-    firstName: string
-    lastName: string
-    city: string
-    state: string
-  }
-}
+import { OnboardingState } from '@shared/types'
 
 interface OnboardingContextType {
   onboardingState: OnboardingState | null

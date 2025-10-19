@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { InterviewMessage } from '@shared/types';
 
 // Import prompts
 const INITIAL_PROMPT = readFileSync(join(__dirname, 'prompt.txt'), 'utf-8');
@@ -25,7 +26,9 @@ export class ClaudeService {
     }
   }
   
-  async getNextMessage(conversation: { name: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> }): Promise<string> {
+  // TODO return an InterviewMessage object with the role 'assistant' and the content of the next message
+  // input: Also an InterviewMessage object with the role 'user' and the content of the user's message
+  async getNextMessage(messages: Array<{ role: 'user' | 'assistant'; content: string }> ): Promise<string> {
     if (!this.anthropic) {
       throw new Error('Claude service not initialized');
     }
@@ -34,12 +37,13 @@ export class ClaudeService {
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 512,
       system: SYSTEM_PROMPT,
-      messages: conversation.messages
+      messages: messages
     });
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   }
 
+  // TODO return an InterviewMessage object with the role 'assistant' and the content of the initial prompt
   getInitialPrompt(name: string): string {
     return INITIAL_PROMPT.replace('{{name}}', name);
   }

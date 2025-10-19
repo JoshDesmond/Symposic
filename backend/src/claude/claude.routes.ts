@@ -5,10 +5,11 @@ import { requireAuth } from '../auth/auth.middleware';
 const router = Router();
 const claudeService = new ClaudeService();
 
+// TODO there should be a shared types for the messages array
+
 /**
  * Input Body Format:
  * {
- *   "name": "Josh",
  *   "messages": [
  *     {
  *       "role": "assistant",
@@ -28,10 +29,11 @@ const claudeService = new ClaudeService();
  */
 router.post('/', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, messages } = req.body;
+    const { messages } = req.body;
+    const phone = (req as any).userPhone;
     
     // Validate required fields
-    if (!name || !messages || !Array.isArray(messages)) {
+    if (!messages || !Array.isArray(messages)) {
       res.status(400).json({ error: 'Name and messages array are required' });
       return;
     }
@@ -47,9 +49,10 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
         return;
       }
     }
+    
+    // Food for thought: A sufficiently motivated prompt injector could modify the assistant's messages and upload fully custom text here as is
 
-    const conversation = { name, messages };
-    const nextMessage = await claudeService.getNextMessage(conversation);
+    const nextMessage = await claudeService.getNextMessage(messages);
     res.json({ message: nextMessage });
   } catch (error) {
     console.error('Error getting Claude response:', error);
@@ -58,15 +61,25 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
 });
 
 router.post('/initial', requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const { name } = req.body;
-  if (!name) {
-    res.status(400).json({ error: 'Name is required' });
-    return;
-  }
+  try {
+    const { name } = req.body;
+    const phone = (req as any).userPhone;
+    
+    if (!name) {
+      res.status(400).json({ error: 'Name is required to start interview' });
+      return;
+    }
 
-  // TODO, should this use try catch?
-  const initialMessage = claudeService.getInitialPrompt(name);
-  res.json({ message: initialMessage });
+    const initialMessage = claudeService.getInitialPrompt(name);
+    
+    // TODO create interviews record in database (requires a join to get profile_id from phone)
+    // TODO push initial message to interview_messages table
+
+    res.json({ message: initialMessage });
+  } catch (error) {
+    console.error('Error loading initial interview message:', error);
+    res.status(500).json({ error: `Error: ${error}` });
+  }
 });
 
 export default router;
