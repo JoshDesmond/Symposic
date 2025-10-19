@@ -3,10 +3,12 @@ import { AuthService } from './auth.service';
 import { requireAuth } from './auth.middleware';
 import { getAllUsers } from '../database';
 import { AccountService } from '../account/account.service';
+import { TextbeltService } from '../services/textbelt.service';
 
 const router = Router();
 const authService = new AuthService();
 const accountService = new AccountService();
+const textbeltService = new TextbeltService();
 
 // Auth routes
 router.post('/send-code', async (req: Request, res: Response): Promise<void> => {
@@ -19,8 +21,24 @@ router.post('/send-code', async (req: Request, res: Response): Promise<void> => 
   
   try {
     const code = await authService.storeOTP(phone);
-    console.log(`Sending code ${code} to ${phone}`);
-    res.json({ success: true });
+    console.log(`Generated code ${code} for ${phone}`);
+    
+    // Send SMS via Textbelt
+    const smsResult = await textbeltService.sendOTPCode(phone, code);
+
+    if (!smsResult.success) {
+      console.error(`Failed to send SMS to ${phone}:`, smsResult.error);
+      res.status(500).json({ 
+        error: `Error: ${smsResult.error}`,
+      });
+      return;
+    }
+    
+    console.log(`SMS sent successfully to ${phone}. TextId: ${smsResult.textId}, Quota remaining: ${smsResult.quotaRemaining}`);
+    
+    res.json({ 
+      success: true,
+    });
   } catch (error) {
     console.error('Error in /send-code endpoint:', error);
     res.status(500).json({ error: 'Failed to send code' });
