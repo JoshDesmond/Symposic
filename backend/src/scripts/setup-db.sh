@@ -50,6 +50,15 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sudo systemctl enable postgresql
 fi
 
+# Create PostgreSQL user if it doesn't exist
+echo "Creating PostgreSQL user '$DB_USER' if it doesn't exist..."
+sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || echo "User '$DB_USER' already exists or created successfully"
+
+# Grant necessary permissions
+echo "Granting permissions to user '$DB_USER'..."
+sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;" 2>/dev/null || true
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO $DB_USER;" 2>/dev/null || true
+
 # Create database if it doesn't exist
 if [ "$RECREATE" = true ]; then
     echo "Dropping database '$DB_NAME' if it exists..."
