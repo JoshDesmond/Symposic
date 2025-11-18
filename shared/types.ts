@@ -25,4 +25,7 @@ export interface Interview {
   createdAt: string;
   finishedAt?: string;
   messages: InterviewMessage[];
+  promptVersion: string; // SemVer
 }
+
+// TODO you will need to support passing back the isCompleted and the estimatedProgress with the new tool-based structured output

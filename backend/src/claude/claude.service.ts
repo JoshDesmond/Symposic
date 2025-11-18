@@ -1,11 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { Interview, InterviewMessage } from '@shared/types';
-
-// Import prompts
-const INITIAL_PROMPT = readFileSync(join(__dirname, 'prompt.txt'), 'utf-8');
-const SYSTEM_PROMPT = readFileSync(join(__dirname, 'systemPrompt.txt'), 'utf-8');
+import { renderPrompt, getInitialMessage } from './prompt.service';
 
 export class ClaudeService {
   private anthropic: Anthropic | null = null;
@@ -33,7 +28,7 @@ export class ClaudeService {
 
     // Check if we've reached the message limit (failsafe)
     const assistantMessages = interview.messages.filter(m => m.role === 'assistant').length;
-    const MAX_ASSISTANT_MESSAGES = 4; // Including initial prompt
+    const MAX_ASSISTANT_MESSAGES = 12; // Including initial prompt
 
     if (assistantMessages >= MAX_ASSISTANT_MESSAGES) {
       // Force completion with final message
@@ -51,27 +46,45 @@ export class ClaudeService {
       };
     }
 
-    const response = await this.anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      system: SYSTEM_PROMPT,
-      messages: interview.messages
-    });
+    // Use renderPrompt to get the complete message params
+    const messageParams = renderPrompt(interview.messages, '');
+    const response = await this.anthropic.messages.create(messageParams);
 
-    const content = response.content[0].type === 'text' ? response.content[0].text : '';
-    
-    // Add the new assistant message to the interview
-    return {
-      interview: {
-        ...interview,
-        messages: [...interview.messages, { role: 'assistant', content }]
-      },
-      isComplete: false
-    };
+    // Extract tool_use response
+    if (response.content[0].type === 'tool_use') {
+      const toolInput = response.content[0].input as {
+        nextMessage: string;
+        isComplete: boolean;
+        estimatedProgress: number;
+      };
+      
+      const assistantMessage: InterviewMessage = {
+        role: 'assistant',
+        content: toolInput.nextMessage
+      };
+      
+      return {
+        interview: {
+          ...interview,
+          messages: [...interview.messages, assistantMessage]
+        },
+        isComplete: toolInput.isComplete
+      };
+    } else {
+      // Fallback if tool_use is not returned
+      const content = response.content[0].type === 'text' ? response.content[0].text : '';
+      return {
+        interview: {
+          ...interview,
+          messages: [...interview.messages, { role: 'assistant', content }]
+        },
+        isComplete: false
+      };
+    }
   }
 
   getInitialPrompt(name: string): InterviewMessage {
-    const content = INITIAL_PROMPT.replace('{{name}}', name);
+    const content = getInitialMessage(name);
     return { role: 'assistant', content };
   }
 

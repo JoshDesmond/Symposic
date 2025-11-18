@@ -1,0 +1,37 @@
+{
+  "version": "0.1.0",
+  "metadata": {
+    "description": "Initial onboarding interview prompt for Symposic",
+    "created": "2025-11-14"
+  },
+  "system": "",
+  "initial": "Hey {{name}}! Let's have a quick chat so I can understand who you are and connect you with compatible people and events. Just type naturally. Your progress will be saved, so feel free to pause and come back.  What field or industries are you currently involved in?",
+  "user": "./user.txt",
+  "tools": [
+    {
+      "name": "send_interview_response",
+      "description": "Send the next interview response",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "nextMessage": {
+            "type": "string",
+            "description": "The next question or statement"
+          },
+          "isComplete": {
+            "type": "boolean",
+            "description": "True if the interview is finished"
+          },
+          "estimatedProgress": {
+            "type": "number",
+            "description": "Progress from 0.0 to 1.0 representing the estimated progress of the interview",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": ["nextMessage", "isComplete", "estimatedProgress"]
+      }
+    }
+  ]
+}
+

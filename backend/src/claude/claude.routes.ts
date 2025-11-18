@@ -61,6 +61,7 @@ router.post('/', requireAuth, async (req: Request, res: Response): Promise<void>
     
     // Food for thought: A sufficiently motivated prompt injector could modify the assistant's messages and upload fully custom text here as is
 
+    // TODO consider if these needs updates with the new Tool-based structured output
     const { interview: updatedInterview, isComplete } = await claudeService.getNextMessage(interview);
     
     // Update the interview in the database
@@ -123,6 +124,7 @@ router.post('/initial', requireAuth, async (req: Request, res: Response): Promis
     const interviewData: Interview = {
       createdAt: new Date().toISOString(),
       messages: [initialMessage]
+      // TODO add promptVersion somehow
     };
     
     // Create interview record in database with phone join
